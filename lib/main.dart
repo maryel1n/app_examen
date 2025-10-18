@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'modules/login/login_page.dart';
 import 'shared/themes/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const AppExamen());
 }
 
@@ -15,7 +19,7 @@ class AppExamen extends StatelessWidget {
       title: 'App Examen',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      home: const HomePlaceholder(),
+      home: const LoginPage(),
     );
   }
 }
@@ -41,7 +45,7 @@ class HomePlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Tema visual aplicado. En el siguiente paso configuraremos Firebase Auth (login).',
+              'Firebase inicializado. En el siguiente paso crearemos el Login.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const Spacer(),
