@@ -1,103 +1,68 @@
-class ProviderModel {
+// lib/modules/providers/provider.dart
+
+class Provider {
   final int id;
   final String name;
   final String lastName;
-  final String email;
+  final String? mail;
   final String? state;
 
-  ProviderModel({
+  Provider({
     required this.id,
     required this.name,
     required this.lastName,
-    required this.email,
+    this.mail,
     this.state,
   });
 
-  factory ProviderModel.fromJson(Map<String, dynamic> json) {
-    return ProviderModel(
-      id: _asInt(json['provider_id']),
-      name: (json['provider_name'] ?? '').toString(),
-      lastName: (json['provider_last_name'] ?? '').toString(),
-      email: (json['provider_mail'] ?? '').toString(),
-      state: json['provider_state']?.toString(),
+  Provider copyWith({
+    int? id,
+    String? name,
+    String? lastName,
+    String? mail,
+    String? state,
+  }) {
+    return Provider(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      lastName: lastName ?? this.lastName,
+      mail: mail ?? this.mail,
+      state: state ?? this.state,
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'provider_id': id,
-    'provider_name': name,
-    'provider_last_name': lastName,
-    'provider_mail': email,
-    if (state != null) 'provider_state': state,
-  };
+  factory Provider.fromMap(Map<String, dynamic> map) {
+    int parseInt(dynamic v) {
+      if (v is int) return v;
+      if (v is String) return int.tryParse(v) ?? 0;
+      return 0;
+    }
 
-  // Helpers
-  static int _asInt(dynamic v) {
-    if (v is int) return v;
-    if (v is String) return int.tryParse(v) ?? 0;
-    if (v is num) return v.toInt();
-    return 0;
+    String? s(dynamic v) => v?.toString();
+
+    return Provider(
+      // acepta provider_id, providerid o id
+      id: parseInt(map['provider_id'] ?? map['providerid'] ?? map['id']),
+      name: s(map['provider_name'] ?? map['name']) ?? '',
+      lastName:
+          s(map['provider_last_name'] ?? map['last_name'] ?? map['lastname']) ??
+          '',
+      mail: s(map['provider_mail'] ?? map['mail'] ?? map['email']),
+      state: s(map['provider_state'] ?? map['state']),
+    );
   }
 
-  /// Soporta distintas envolturas de la API (p.ej. "Listado Proveedores")
-  static List<ProviderModel> fromList(dynamic data) {
-    if (data is List) {
-      return data
-          .map((e) => ProviderModel.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-    }
-    if (data is Map) {
-      const keys = [
-        'Listado Proveedores', // posible clave devuelta por el backend
-        'Listado',
-        'listado',
-        'data',
-        'providers',
-        'proveedores',
-        'items',
-        'result',
-        'rows',
-        'lista',
-      ];
-      for (final k in keys) {
-        final v = data[k];
-        if (v is List) {
-          return v
-              .map((e) => ProviderModel.fromJson(Map<String, dynamic>.from(e)))
-              .toList();
-        }
-      }
-      // Heurística: detecta cualquier lista con campos provider_*
-      for (final entry in data.entries) {
-        final v = entry.value;
-        if (v is List && v.isNotEmpty && v.first is Map) {
-          final first = Map<String, dynamic>.from(v.first as Map);
-          if (first.keys.any((k) => k.toString().startsWith('provider_'))) {
-            return v
-                .map(
-                  (e) => ProviderModel.fromJson(
-                    Map<String, dynamic>.from(e as Map),
-                  ),
-                )
-                .toList();
-          }
-        }
-      }
-      // Anidado en data
-      final d2 = data['data'];
-      if (d2 is Map) {
-        for (final k in keys) {
-          final v = d2[k];
-          if (v is List) {
-            return v
-                .map(
-                  (e) => ProviderModel.fromJson(Map<String, dynamic>.from(e)),
-                )
-                .toList();
-          }
-        }
-      }
-    }
-    return <ProviderModel>[];
+  Map<String, dynamic> toMapForApi() {
+    return {
+      'provider_id': id,
+      'provider_name': name,
+      'provider_last_name': lastName,
+      'provider_mail': mail,
+      'provider_state': state ?? 'Activo',
+    };
   }
+
+  @override
+  String toString() =>
+      'Provider(id: $id, name: $name, lastName: $lastName, mail: $mail, state: $state)';
 }

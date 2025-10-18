@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:app_examen/shared/services/api_client.dart';
+
 import 'provider.dart';
 import 'provider_service.dart';
 import 'provider_form_page.dart';
 
 class ProviderListPage extends StatefulWidget {
-  const ProviderListPage({super.key});
+  final bool embedded; // para Tabs si lo usas embebido
+  const ProviderListPage({super.key, this.embedded = false});
 
   @override
   State<ProviderListPage> createState() => _ProviderListPageState();
@@ -15,7 +17,7 @@ class ProviderListPage extends StatefulWidget {
 class _ProviderListPageState extends State<ProviderListPage> {
   bool _loading = true;
   String? _error;
-  List<ProviderModel> _items = const [];
+  List<Provider> _items = const [];
 
   @override
   void initState() {
@@ -40,12 +42,12 @@ class _ProviderListPageState extends State<ProviderListPage> {
     }
   }
 
-  Future<void> _confirmDelete(ProviderModel p) async {
+  Future<void> _confirmDelete(Provider p) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Eliminar proveedor'),
-        content: Text('¿Seguro quieres eliminar a "${p.name} ${p.lastName}"?'),
+        content: Text('¿Seguro quieres eliminar "${p.name} ${p.lastName}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -108,9 +110,128 @@ class _ProviderListPageState extends State<ProviderListPage> {
     }
   }
 
+  Future<void> _openForm({Provider? initial}) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => ProviderFormPage(initial: initial)),
+    );
+    if (saved == true) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Proveedor guardado.')));
+      _fetch();
+    }
+  }
+
+  Widget _buildBody(TextTheme t) {
+    return SafeArea(
+      child: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Ocurrió un problema al cargar proveedores.',
+                    style: t.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(_error!, style: t.bodySmall),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _fetch,
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: _fetch,
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                itemCount: _items.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final p = _items[index];
+                  final fullName = '${p.name} ${p.lastName}'.trim();
+                  return Card(
+                    child: InkWell(
+                      onTap: () async => _openForm(initial: p),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 26,
+                              child: const Icon(Icons.local_shipping),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    fullName.isEmpty
+                                        ? '(Sin nombre)'
+                                        : fullName,
+                                    style: t.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if ((p.mail ?? '').isNotEmpty)
+                                    Text(p.mail!, style: t.bodyMedium),
+                                  if ((p.state ?? '').isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        p.state!,
+                                        style: t.bodySmall?.copyWith(
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            PopupMenuButton<String>(
+                              onSelected: (value) async {
+                                if (value == 'edit') {
+                                  await _openForm(initial: p);
+                                } else if (value == 'del') {
+                                  await _confirmDelete(p);
+                                }
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('Editar'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'del',
+                                  child: Text('Eliminar'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+
+    if (widget.embedded) return _buildBody(t);
 
     return Scaffold(
       appBar: AppBar(
@@ -123,106 +244,9 @@ class _ProviderListPageState extends State<ProviderListPage> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-            ? Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Ocurrió un problema al cargar los proveedores.',
-                      style: t.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(_error!, style: t.bodySmall),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: _fetch,
-                      child: const Text('Reintentar'),
-                    ),
-                  ],
-                ),
-              )
-            : RefreshIndicator(
-                onRefresh: _fetch,
-                child: ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final p = _items[index];
-                    return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(
-                            (p.name.isNotEmpty ? p.name[0] : '?').toUpperCase(),
-                          ),
-                        ),
-                        title: Text(
-                          '${p.name} ${p.lastName}',
-                          style: t.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(p.email),
-                            if ((p.state ?? '').isNotEmpty)
-                              Text(
-                                p.state!,
-                                style: t.bodySmall?.copyWith(
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                          ],
-                        ),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (value) async {
-                            if (value == 'edit') {
-                              final saved = await Navigator.of(context)
-                                  .push<bool>(
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          ProviderFormPage(initial: p),
-                                    ),
-                                  );
-                              if (saved == true) _fetch();
-                            } else if (value == 'del') {
-                              _confirmDelete(p);
-                            }
-                          },
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'edit', child: Text('Editar')),
-                            PopupMenuItem(
-                              value: 'del',
-                              child: Text('Eliminar'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-      ),
+      body: _buildBody(t),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(builder: (_) => const ProviderFormPage()),
-          );
-          if (result == true) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Proveedor guardado.')),
-            );
-            _fetch();
-          }
-        },
+        onPressed: () async => _openForm(),
         icon: const Icon(Icons.add),
         label: const Text('Agregar'),
       ),

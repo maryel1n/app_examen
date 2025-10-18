@@ -3,8 +3,7 @@ import 'provider.dart';
 import 'provider_service.dart';
 
 class ProviderFormPage extends StatefulWidget {
-  final ProviderModel? initial; // si viene, es edición
-
+  final Provider? initial; // si viene, es edición
   const ProviderFormPage({super.key, this.initial});
 
   @override
@@ -15,7 +14,7 @@ class _ProviderFormPageState extends State<ProviderFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _lastNameCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
+  final _mailCtrl = TextEditingController();
   String _state = 'Activo';
   bool _loading = false;
 
@@ -26,7 +25,7 @@ class _ProviderFormPageState extends State<ProviderFormPage> {
     if (p != null) {
       _nameCtrl.text = p.name;
       _lastNameCtrl.text = p.lastName;
-      _emailCtrl.text = p.email;
+      _mailCtrl.text = p.mail ?? '';
       _state = p.state ?? 'Activo';
     }
   }
@@ -35,17 +34,8 @@ class _ProviderFormPageState extends State<ProviderFormPage> {
   void dispose() {
     _nameCtrl.dispose();
     _lastNameCtrl.dispose();
-    _emailCtrl.dispose();
+    _mailCtrl.dispose();
     super.dispose();
-  }
-
-  String? _emailValidator(String? v) {
-    final s = v?.trim() ?? '';
-    if (s.isEmpty) return 'El correo es obligatorio';
-    // validación sencilla
-    final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(s);
-    if (!ok) return 'Correo inválido';
-    return null;
   }
 
   Future<void> _submit() async {
@@ -54,13 +44,13 @@ class _ProviderFormPageState extends State<ProviderFormPage> {
     try {
       final name = _nameCtrl.text.trim();
       final lastName = _lastNameCtrl.text.trim();
-      final email = _emailCtrl.text.trim();
+      final mail = _mailCtrl.text.trim();
 
       if (widget.initial == null) {
         await ProviderService.add(
           name: name,
           lastName: lastName,
-          email: email,
+          mail: mail,
           state: _state,
         );
       } else {
@@ -68,13 +58,13 @@ class _ProviderFormPageState extends State<ProviderFormPage> {
           id: widget.initial!.id,
           name: name,
           lastName: lastName,
-          email: email,
+          mail: mail,
           state: _state,
         );
       }
 
       if (!mounted) return;
-      Navigator.pop(context, true); // éxito
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -88,6 +78,7 @@ class _ProviderFormPageState extends State<ProviderFormPage> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.initial != null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(isEdit ? 'Editar proveedor' : 'Agregar proveedor'),
@@ -103,28 +94,23 @@ class _ProviderFormPageState extends State<ProviderFormPage> {
                 TextFormField(
                   controller: _nameCtrl,
                   decoration: const InputDecoration(labelText: 'Nombre'),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'El nombre es obligatorio'
-                      : null,
                   textInputAction: TextInputAction.next,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _lastNameCtrl,
                   decoration: const InputDecoration(labelText: 'Apellido'),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'El apellido es obligatorio'
-                      : null,
                   textInputAction: TextInputAction.next,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
-                  controller: _emailCtrl,
+                  controller: _mailCtrl,
                   decoration: const InputDecoration(labelText: 'Correo'),
                   keyboardType: TextInputType.emailAddress,
-                  validator: _emailValidator,
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _submit(),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
