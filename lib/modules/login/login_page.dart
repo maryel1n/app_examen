@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:app_examen/modules/products/product_list_page.dart';
-import 'package:app_examen/modules/products/product_list_page.dart';
+import 'package:app_examen/modules/home/home_page.dart';
 
 enum AuthMode { signIn, signUp }
 
@@ -31,6 +30,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
     setState(() => _loading = true);
     try {
@@ -47,8 +47,9 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const ProductListPage()),
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+        (_) => false,
       );
     } on FirebaseAuthException catch (e) {
       _showError(_humanizeError(e));
@@ -232,35 +233,6 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Placeholder de Home (se reemplazará por la vista de inicio con accesos a módulos)
-class _HomeAfterLogin extends StatelessWidget {
-  const _HomeAfterLogin();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Inicio')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              '¡Sesión iniciada!',
-              style: t.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Aquí agregaremos accesos a Productos, Categorías y Proveedores.',
-            ),
-          ],
         ),
       ),
     );

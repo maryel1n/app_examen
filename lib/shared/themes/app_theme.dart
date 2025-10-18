@@ -8,15 +8,16 @@ class AppTheme {
   static const Color _text = Color(0xFF333333);
 
   static ThemeData light() {
-    final base = ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _primary,
-        brightness: Brightness.light,
-        primary: _primary,
-        secondary: _secondary,
-        background: _background,
-      ),
+    final base = ThemeData.light(useMaterial3: true);
+    final scheme = ColorScheme.fromSeed(
+      seedColor: _primary,
+      brightness: Brightness.light,
+      primary: _primary,
+      onPrimary: Colors.white,
+      secondary: _secondary,
+      onSecondary: Colors.black,
+      surface: Colors.white,
+      onSurface: const Color(0xFF111827),
     );
 
     final textTheme = GoogleFonts.interTextTheme(
@@ -24,25 +25,38 @@ class AppTheme {
     ).apply(bodyColor: _text, displayColor: _text);
 
     return base.copyWith(
+      colorScheme: scheme,
       scaffoldBackgroundColor: _background,
       textTheme: textTheme,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: _text,
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
         centerTitle: false,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+      ),
+      tabBarTheme: TabBarThemeData(
+        indicatorColor: scheme.onPrimary,
+        labelColor: scheme.onPrimary,
+        unselectedLabelColor: scheme.onPrimary.withOpacity(0.7),
+        indicatorSize: TabBarIndicatorSize.tab,
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.secondary,
+        foregroundColor: scheme.onSecondary,
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: Color(0xFFE5E7EB)),
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
         ),
-        focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(14)),
-          borderSide: BorderSide(color: _primary, width: 1.6),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(14)),
+          borderSide: BorderSide(color: scheme.primary, width: 1.6),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
@@ -51,8 +65,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: _primary,
-          foregroundColor: Colors.white,
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -64,8 +78,8 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: _primary,
-          side: const BorderSide(color: _primary),
+          foregroundColor: scheme.primary,
+          side: BorderSide(color: scheme.primary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -79,6 +93,15 @@ class AppTheme {
         elevation: 0,
         color: Colors.white,
         margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: scheme.primary,
+        contentTextStyle: TextStyle(color: scheme.onPrimary),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

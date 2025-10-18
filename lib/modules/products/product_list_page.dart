@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:app_examen/shared/services/api_client.dart';
 import 'package:app_examen/modules/categories/category_list_page.dart';
 import 'package:app_examen/modules/providers/provider_list_page.dart';
@@ -8,7 +9,7 @@ import 'product_service.dart';
 import 'product_form_page.dart';
 
 class ProductListPage extends StatefulWidget {
-  final bool embedded; // para Tabs
+  final bool embedded; // <- nuevo
   const ProductListPage({super.key, this.embedded = false});
 
   @override
@@ -19,6 +20,7 @@ class _ProductListPageState extends State<ProductListPage> {
   bool _loading = true;
   String? _error;
   List<Product> _items = const [];
+  static final NumberFormat _fmtClp = NumberFormat.decimalPattern('es_CL');
 
   @override
   void initState() {
@@ -61,16 +63,17 @@ class _ProductListPageState extends State<ProductListPage> {
         ],
       ),
     );
+    if (!context.mounted) return;
     if (ok == true) {
       try {
         await ProductService.delete(p.id);
-        if (!mounted) return;
+        if (!context.mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Producto eliminado.')));
         _fetch();
       } catch (e) {
-        if (!mounted) return;
+        if (!context.mounted) return;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
@@ -78,7 +81,7 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-  String _price(double v) => '\$${v.toStringAsFixed(0)}';
+  String _price(num v) => '\$${_fmtClp.format(v.round())}';
 
   String _pretty(dynamic v) {
     try {
@@ -91,7 +94,7 @@ class _ProductListPageState extends State<ProductListPage> {
   Future<void> _showRawResponse() async {
     try {
       final data = await ApiClient.getJson('ejemplos/product_list_rest/');
-      if (!mounted) return;
+      if (!context.mounted) return;
       await showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -118,7 +121,7 @@ class _ProductListPageState extends State<ProductListPage> {
       MaterialPageRoute(builder: (_) => ProductFormPage(initial: p)),
     );
     if (saved == true) {
-      if (!mounted) return;
+      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Producto guardado.')));
@@ -285,7 +288,7 @@ class _ProductListPageState extends State<ProductListPage> {
             MaterialPageRoute(builder: (_) => const ProductFormPage()),
           );
           if (result == true) {
-            if (!mounted) return;
+            if (!context.mounted) return;
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text('Producto guardado.')));

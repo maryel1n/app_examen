@@ -1,12 +1,12 @@
-import 'dart:convert';
+// lib/modules/categories/category_list_page.dart
 import 'package:flutter/material.dart';
-import 'package:app_examen/shared/services/api_client.dart';
 import 'category.dart';
 import 'category_service.dart';
 import 'category_form_page.dart';
 
 class CategoryListPage extends StatefulWidget {
-  const CategoryListPage({super.key});
+  final bool embedded;
+  const CategoryListPage({super.key, this.embedded = false});
 
   @override
   State<CategoryListPage> createState() => _CategoryListPageState();
@@ -58,6 +58,7 @@ class _CategoryListPageState extends State<CategoryListPage> {
         ],
       ),
     );
+    if (!context.mounted) return;
     if (ok == true) {
       try {
         await CategoryService.delete(c.id);
@@ -75,54 +76,11 @@ class _CategoryListPageState extends State<CategoryListPage> {
     }
   }
 
-  String _pretty(dynamic v) {
-    try {
-      return const JsonEncoder.withIndent('  ').convert(v);
-    } catch (_) {
-      return v.toString();
-    }
-  }
-
-  Future<void> _showRawResponse() async {
-    try {
-      final data = await ApiClient.getJson('ejemplos/category_list_rest/');
-      if (!mounted) return;
-      await showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Respuesta cruda de la API'),
-          content: SingleChildScrollView(child: Text(_pretty(data))),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cerrar'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error al obtener JSON: $e')));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Categorías'),
-        actions: [
-          IconButton(
-            tooltip: 'Ver JSON',
-            icon: const Icon(Icons.bug_report),
-            onPressed: _showRawResponse,
-          ),
-        ],
-      ),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -176,6 +134,7 @@ class _CategoryListPageState extends State<CategoryListPage> {
                                           CategoryFormPage(initial: c),
                                     ),
                                   );
+                              if (!context.mounted) return;
                               if (saved == true) _fetch();
                             } else if (value == 'del') {
                               _confirmDelete(c);
@@ -201,7 +160,7 @@ class _CategoryListPageState extends State<CategoryListPage> {
             MaterialPageRoute(builder: (_) => const CategoryFormPage()),
           );
           if (result == true) {
-            if (!mounted) return;
+            if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Categoría guardada.')),
             );
